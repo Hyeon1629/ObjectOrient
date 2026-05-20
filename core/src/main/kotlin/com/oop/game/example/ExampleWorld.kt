@@ -225,10 +225,11 @@ class ExampleWorld(
         // ── 항상 보이는 UI ──
         drawBoxes()
         drawInputNumbers()
-
+        drawanswer()
         drawHud()
 
-        // ── 상태별로 그리는 것이 다름 ──
+        // ── 상태별로
+        //그리는 것이 다름 ──
         when (state) {
             GameState.IN_PLAY -> {
                 // 플레이 중에는 추가로 그릴 것 없음
@@ -280,8 +281,11 @@ class ExampleWorld(
         shapeRenderer.end()
 
     }
+
+
     private val InputNumbers = intArrayOf(0, 0, 0, 0)
     private var BoxIndex = 0
+    val answer = mutableListOf<String>()
 
     private fun NumberInput(){
         if (InputHandler.isKeyJustPressed(InputHandler.LEFT)) {
@@ -302,6 +306,24 @@ class ExampleWorld(
         if (InputHandler.isKeyJustPressed(InputHandler.DOWN)) {
             InputNumbers[BoxIndex]--
             if (InputNumbers[BoxIndex] < 0) InputNumbers[BoxIndex] = 9
+        }
+        if (InputHandler.isKeyJustPressed(InputHandler.ENTER)) {
+                val result = InputNumbers.joinToString("")
+                answer.add(result)
+        }
+
+    }
+    private fun drawanswer(){
+        var y = screenHeight - 50f
+
+        for (i in answer.indices) {
+            drawTextOnScreen(
+                text = answer[i],
+                x = 40f,
+                y = y - 70f * i,
+                color = Color.WHITE,
+                scale = 1.5f
+            )
         }
     }
 
