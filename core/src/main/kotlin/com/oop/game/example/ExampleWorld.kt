@@ -8,6 +8,8 @@ import com.oop.game.GameWorld
 import com.oop.game.InputHandler
 import kotlin.math.floor
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.Input
+
 
 
 /**
@@ -51,7 +53,7 @@ class ExampleWorld(
     screenWidth: Float,
     screenHeight: Float,
     worldWidth: Float,
-    worldHeight: Float
+    worldHeight: Float,
 ) : GameWorld(screenWidth, screenHeight, worldWidth, worldHeight) {
 
     /**
@@ -71,18 +73,18 @@ class ExampleWorld(
     // 플레이어 — 월드 중앙 하단에서 시작.
     //   월드 크기를 함께 넘겨서, 경계 밖으로 못 나가게 한다.
     private val player = ExamplePlayer(
-        x = worldWidth / 2 - 10f,   // 가로 30 의 절반을 빼서 정확히 중앙
-        y = 50f,
+        x = worldWidth / 2,   // 가로 30 의 절반을 빼서 정확히 중앙
+        y = 200f,
         worldWidth = worldWidth,
         worldHeight = worldHeight
     )
 
     // 적 — 월드 상단에서 좌우 왕복.
     private val enemy = ExampleEnemy(
-        x = 1440f,
+        x = worldWidth / 2,
         y = worldHeight - 200f,
-        minX = 0f,
-        maxX = 0f
+        minX = worldWidth / 2 - 250,
+        maxX = worldWidth / 2 + 250
     )
 
     // 현재 게임 상태 — 입력/충돌에 따라 IN_PLAY ↔ GAME_OVER 로 전환된다.
@@ -98,6 +100,9 @@ class ExampleWorld(
     private val bgColorDark = Color(0f, 0f, 0f, 1f)
     private val bgColorLight = Color(0.05f, 0f, 0.1f, 1f)
     private val tileSize = 64f
+    private val shapeRenderer = ShapeRenderer()
+    private val boxSize = 70f
+    private val boxGap = 15f
 
     /**
      * 생성자 본문 — 월드에 플레이어와 적을 등록한다.
@@ -140,7 +145,9 @@ class ExampleWorld(
         offsetY = offsetY.coerceIn(0f, worldHeight - screenHeight)
 
         // ── 1) 게임 객체 갱신 — 각자 한 프레임씩 진행 ──
+        NumberInput()
         updateAllObjects(delta)
+
 
         // ── 2) 상호작용 결정 — 누가 누구와 부딪혀 어떻게 되는지 ──
         //   collidesWith 는 GameObject 의 메서드 → 모든 게임 객체가 자동으로 가짐.
@@ -188,14 +195,26 @@ class ExampleWorld(
         val cols = (screenWidth / tileSize).toInt() + 3
         val rows = (screenHeight / tileSize).toInt() + 3
 
+        batch.color = Color(0.03f, 0.02f, 0.08f, 1f)
+        batch.draw(
+            tileTexture,
+            screenWidth / 2 - 250,
+            0f,
+            500f,
+            screenHeight - 0f)
         // 배경에 입힌 색이 다음 그리기(게임 객체)에 영향을 주지 않도록 흰색으로 복원.
         batch.color = Color.WHITE
+        val lineThickness = 0.3f
+        batch.draw(tileTexture, screenWidth / 3 - 10, 200f,  screenWidth / 3 + 20, lineThickness)
+        batch.draw(tileTexture, screenWidth / 2 - 250,0f, lineThickness, screenHeight)
+        batch.draw(tileTexture, screenWidth / 2 + 250, 0f, lineThickness, screenHeight)
     }
 
     /**
      * 매 프레임 그리기 — 부모가 배경·객체까지 그려준 뒤, 텍스트 UI 를 얹는다.
      *
      * 이 함수에서는 '그리기' 만 한다. 입력 처리·상태 변경은 update() 의 책임.
+     *
      *
      * 주의: super.render(delta) 가 화면 clear + 배경 + 객체까지 그리므로,
      *       텍스트는 반드시 super 호출 **이후** 그려야 가려지지 않는다.
@@ -204,6 +223,9 @@ class ExampleWorld(
         super.render(delta)
 
         // ── 항상 보이는 UI ──
+        drawBoxes()
+        drawInputNumbers()
+
         drawHud()
 
         // ── 상태별로 그리는 것이 다름 ──
@@ -220,40 +242,93 @@ class ExampleWorld(
         // 1) UI 텍스트 (화면 고정) — 좌측 상단 HP 표시.
         //    카메라가 움직여도 항상 이 위치에 있다.
         drawTextOnScreen(
-            text = "[ score ]",
-            x = 1100f,
-            y = screenHeight - 200f,   // 화면 y 축은 위로 증가 → 맨 위가 screenHeight
-            color = Color.YELLOW,
-            scale = 3.0f
-        )
-
-        drawTextOnScreen(
-            text = "[ distance ]",
-            x = 1100f,
-            y = screenHeight - 150f,
-            color = Color.GREEN,
-            scale = 3.0f
-        )
-
-        drawTextOnScreen(
-            text = "[ time ]",
-            x = 1100f,
-            y = screenHeight - 100f,
-            color = Color.WHITE,
-            scale = 3.0f
-        )
-
-        drawTextOnScreen(
             text = ">Guess Log",
             x = 10f,
             y = screenHeight - 10f,
             color = Color.GREEN,
             scale = 1.5f
         )
+        drawTextOnScreen(
+            text = ">> INPUT",
+            x = screenWidth / 2 - 240,
+            y = screenHeight / 3 - 85,
+            color = Color.GREEN,
+            scale = 1.4f
+        )
+
+
 
         // 2) 월드 텍스트 (월드 좌표) — 월드 정중앙에 "WORLD CENTER".
         //    WASD 로 카메라를 움직이면 이 글자도 화면에서 움직인다.
     }
+    private fun drawBoxes() {
+        val Width = boxSize * 4 + boxGap * 3
+
+        val firstx = screenWidth / 2 - 185
+        val firsty = 40f
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
+
+        shapeRenderer.color = Color.GREEN
+
+        for (i in 0 until 4) {
+            val x = firstx + i * 100
+
+            shapeRenderer.rect(x, firsty, boxSize, boxSize)
+        }
+
+        shapeRenderer.end()
+
+    }
+    private val InputNumbers = intArrayOf(0, 0, 0, 0)
+    private var BoxIndex = 0
+
+    private fun NumberInput(){
+        if (InputHandler.isKeyJustPressed(InputHandler.LEFT)) {
+            BoxIndex --
+            if (BoxIndex < 0) BoxIndex = 3
+        }
+
+        if (InputHandler.isKeyJustPressed(InputHandler.RIGHT)) {
+            BoxIndex++
+            if (BoxIndex > 3) BoxIndex = 0
+        }
+
+        if (InputHandler.isKeyJustPressed(InputHandler.UP)) {
+            InputNumbers[BoxIndex]++
+            if (InputNumbers[BoxIndex] > 9) InputNumbers[BoxIndex] = 0
+        }
+
+        if (InputHandler.isKeyJustPressed(InputHandler.DOWN)) {
+            InputNumbers[BoxIndex]--
+            if (InputNumbers[BoxIndex] < 0) InputNumbers[BoxIndex] = 9
+        }
+    }
+
+    private fun drawInputNumbers() {
+        val firstX = screenWidth / 2 - 185
+        val firstY = 40f
+
+        for (i in 0 until 4) {
+            val x = firstX + i * 100
+
+            val selected=  if(i == BoxIndex) {
+                Color.RED
+            }
+            else{
+                Color.GREEN
+            }
+
+            drawTextOnScreen(
+                text = InputNumbers[i].toString(),
+                x = firstX + i * 100 + 22,
+                y = firstY + 52,
+                color = selected,
+                scale = 3f
+            )
+        }
+    }
+
 
     /** 게임 오버 시 화면 중앙에 띄우는 안내 메시지. */
     private fun drawGameOverOverlay() {
@@ -269,7 +344,7 @@ class ExampleWorld(
             x = screenWidth / 2 - 70f,
             y = screenHeight / 2 - 40f,
             color = Color.WHITE,
-            scale = 1f
+            scale = 2f
         )
     }
 
@@ -277,5 +352,6 @@ class ExampleWorld(
     override fun dispose() {
         super.dispose()
         tileTexture.dispose()
+        shapeRenderer.dispose()
     }
 }

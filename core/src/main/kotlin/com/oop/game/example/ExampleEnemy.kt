@@ -34,7 +34,7 @@ class ExampleEnemy(
     // 이미지 로딩 — src/main/resources/enemy.png.
     private val texture = Texture(Gdx.files.internal("enemy.png"))
 
-    private val speed = 0f
+    private val speed = 100f
 
     // 현재 진행 방향 — +1 이면 오른쪽, -1 이면 왼쪽.
     //   var 로 선언한 이유: 경계에서 반대로 뒤집혀야 하므로 값이 변함.

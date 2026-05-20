@@ -39,14 +39,14 @@ class ExamplePlayer(
     private val speed = 200f
 
     override fun update(delta: Float) {
-        if (InputHandler.isKeyPressed(InputHandler.LEFT))  x -= speed * delta
-        if (InputHandler.isKeyPressed(InputHandler.RIGHT)) x += speed * delta
-        if (InputHandler.isKeyPressed(InputHandler.UP))    y += speed * delta
-        if (InputHandler.isKeyPressed(InputHandler.DOWN))  y -= speed * delta
+        if (InputHandler.isKeyPressed(InputHandler.A))  x -= speed * delta
+        if (InputHandler.isKeyPressed(InputHandler.D)) x += speed * delta
+        if (InputHandler.isKeyPressed(InputHandler.W))    y += speed * delta
+        if (InputHandler.isKeyPressed(InputHandler.S))  y -= speed * delta
 
         // 월드 경계 안쪽으로 가두기.
-        x = x.coerceIn(0f, worldWidth - width)
-        y = y.coerceIn(0f, worldHeight - height)
+        x = x.coerceIn(worldWidth / 2 - 250, worldWidth / 2 + 250 - 100f)
+        y = y.coerceIn(200f, worldHeight - height)
     }
 
     /**
