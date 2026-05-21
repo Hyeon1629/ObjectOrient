@@ -128,6 +128,7 @@ class ExampleWorld(
         }
     }
 
+
     /** IN_PLAY 상태에서 매 프레임 처리 — 카메라 이동, 객체 갱신, 충돌 체크. */
     private fun updateInPlay(delta: Float) {
         // ── 카메라 이동 (WASD) ──
@@ -187,6 +188,25 @@ class ExampleWorld(
      *   tile.png 가 흰색이라 어떤 색이든 그대로 적용된다.
      *   끝에 다시 흰색으로 되돌려두지 않으면 그 다음 그리는 것까지 영향을 받으니 주의.
      */
+
+    private fun drawstars(){
+        batch.color = Color.WHITE
+
+        for(i in 0 until 20) {
+            val x = screenWidth / 2 - 250 + (i * 35 % 500).toFloat()
+            val y = 200f + (i * 200 % screenHeight.toInt()).toFloat()
+
+            batch.draw(
+                tileTexture,
+                x,
+                y,
+                2f,
+                2f
+            )
+        }
+        batch.color = Color.WHITE
+
+    }
     override fun drawBackground(batch: SpriteBatch) {
         // 현재 카메라 시작점이 속한 타일 인덱스 (여유분으로 -1)
         val startCol = floor(offsetX / tileSize).toInt() - 1
@@ -195,6 +215,7 @@ class ExampleWorld(
         val cols = (screenWidth / tileSize).toInt() + 3
         val rows = (screenHeight / tileSize).toInt() + 3
 
+
         batch.color = Color(0.03f, 0.02f, 0.08f, 1f)
         batch.draw(
             tileTexture,
@@ -202,12 +223,17 @@ class ExampleWorld(
             0f,
             500f,
             screenHeight - 0f)
+
+        drawstars()
+
         // 배경에 입힌 색이 다음 그리기(게임 객체)에 영향을 주지 않도록 흰색으로 복원.
         batch.color = Color.WHITE
         val lineThickness = 0.3f
         batch.draw(tileTexture, screenWidth / 3 - 10, 200f,  screenWidth / 3 + 20, lineThickness)
         batch.draw(tileTexture, screenWidth / 2 - 250,0f, lineThickness, screenHeight)
         batch.draw(tileTexture, screenWidth / 2 + 250, 0f, lineThickness, screenHeight)
+
+        batch.color = Color.WHITE
     }
 
     /**
@@ -308,7 +334,7 @@ class ExampleWorld(
             if (InputNumbers[BoxIndex] < 0) InputNumbers[BoxIndex] = 9
         }
         if (InputHandler.isKeyJustPressed(InputHandler.ENTER)) {
-                val result = InputNumbers.joinToString("")
+                val result = InputNumbers.joinToString("    ")
                 answer.add(result)
         }
 
