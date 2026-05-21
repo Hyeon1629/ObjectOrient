@@ -27,13 +27,15 @@ class ExamplePlayer(
     x: Float,
     y: Float,
     private val worldWidth: Float,
-    private val worldHeight: Float
+    private val worldHeight: Float,
 ) : GameObject(x, y, 100f, 100f) {
 
     // 이미지 로딩.
     //   Gdx.files.internal: 클래스패스(자원 폴더)에서 파일을 찾아 읽는다.
     //   Texture 는 GPU 메모리에 이미지를 올린 핸들이다.
     //   src/main/resources/player.png 에 위치.
+    var image = true
+
     private val texture = Texture(Gdx.files.internal("player.png"))
 
     private val speed = 200f
@@ -57,6 +59,8 @@ class ExamplePlayer(
      *   원본 이미지가 30x30 이고 w=30, h=30 이면 1:1 그대로 그려진다.
      */
     override fun draw(batch: SpriteBatch) {
+        if (!image) return
+
         batch.draw(texture, x, y, width, height)
     }
 

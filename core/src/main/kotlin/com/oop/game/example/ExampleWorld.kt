@@ -8,9 +8,7 @@ import com.oop.game.GameWorld
 import com.oop.game.InputHandler
 import kotlin.math.floor
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.Input
-
-
+import com.badlogic.gdx.graphics.g2d.ParticleEffect
 
 
 /**
@@ -55,6 +53,7 @@ class ExampleWorld(
     screenHeight: Float,
     worldWidth: Float,
     worldHeight: Float,
+    //private: Any,
 ) : GameWorld(screenWidth, screenHeight, worldWidth, worldHeight) {
 
     /**
@@ -104,8 +103,9 @@ class ExampleWorld(
     private val shapeRenderer = ShapeRenderer()
     private val boxSize = 70f
     private val boxGap = 15f
-
-
+    private val explosionEffect = ParticleEffect()
+    private var explosionStart = false
+    private val particleBatch = SpriteBatch()
     /**
      * 생성자 본문 — 월드에 플레이어와 적을 등록한다.
      *   이렇게 등록해야 update / draw 루프에 포함된다.
@@ -113,8 +113,10 @@ class ExampleWorld(
     init {
         add(player)
         add(enemy)
-
-
+        explosionEffect.load(
+            Gdx.files.internal("explosion.p"),
+            Gdx.files.internal("")
+        )
     }
 
     /**
@@ -131,9 +133,6 @@ class ExampleWorld(
             GameState.GAME_OVER -> updateGameOver()
         }
     }
-
-
-    private var effectime = 0f
 
 
     /** IN_PLAY 상태에서 매 프레임 처리 — 카메라 이동, 객체 갱신, 충돌 체크. */
@@ -153,20 +152,30 @@ class ExampleWorld(
         offsetY = offsetY.coerceIn(0f, worldHeight - screenHeight)
 
         // ── 1) 게임 객체 갱신 — 각자 한 프레임씩 진행 ──
-        effectime += delta
         NumberInput()
         updateAllObjects(delta)
-
+        turnTimer -= delta
+        if (turnTimer <= 0f) {
+            distanceClosed++
+            turnTimer = minTimer
+        }
 
         // ── 2) 상호작용 결정 — 누가 누구와 부딪혀 어떻게 되는지 ──
         //   collidesWith 는 GameObject 의 메서드 → 모든 게임 객체가 자동으로 가짐.
         //   이 예제에선 충돌 시 객체를 죽이지 않고 게임 상태만 바꾼다.
         //   (총알 게임이라면 여기서 bullet.kill(), enemy.kill() 같은 처리)
         if (player.collidesWith(enemy)) {
+            player.image = false
+            explosionEffect.setPosition(
+                player.x + player.width / 2,
+                player.y + player.height / 2
+            )
+
+            explosionEffect.start()
+            explosionStart = true
+
             state = GameState.GAME_OVER
         }
-
-
 
         // ── 3) 죽은 객체 정리 ──
         //   현재 예제에선 아무 것도 안 죽으므로 영향 없지만,
@@ -174,11 +183,13 @@ class ExampleWorld(
         removeDead()
     }
 
-
     /** GAME_OVER 상태에서 매 프레임 처리 — ESC 입력만 감시한다. */
     private fun updateGameOver() {
         // ESC 키가 '막 눌린 순간' 앱 종료.
         //   isKeyJustPressed 로 한 이유: 누르고 있는 동안 매 프레임 exit 호출되지 않게.
+        if(explosionStart){
+            explosionEffect.update(Gdx.graphics.deltaTime)
+        }
         if (InputHandler.isKeyJustPressed(InputHandler.ESCAPE)) {
             Gdx.app.exit()
         }
@@ -259,12 +270,18 @@ class ExampleWorld(
     override fun render(delta: Float) {
         super.render(delta)
 
+        if (explosionStart) {
+            particleBatch.begin()
+            explosionEffect.draw(particleBatch)
+            particleBatch.end()
+        }
 
         // ── 항상 보이는 UI ──
         drawBoxes()
         drawInputNumbers()
         drawanswer()
         drawHud()
+        drawDistancebar()
 
         // ── 상태별로
         //그리는 것이 다름 ──
@@ -275,8 +292,6 @@ class ExampleWorld(
             GameState.GAME_OVER -> drawGameOverOverlay()
         }
     }
-
-
 
     /** 항상 화면에 표시되는 정보 — HP 표시와 월드 중앙 표지. */
     private fun drawHud() {
@@ -294,6 +309,13 @@ class ExampleWorld(
             x = screenWidth / 2 - 240,
             y = screenHeight / 3 - 85,
             color = Color.GREEN,
+            scale = 1.4f
+        )
+        drawTextOnScreen(
+            text = "TIMER: ${turnTimer.toInt()} sec",
+            x = screenWidth / 2 - 250,
+            y = screenHeight / 3 - 120,
+            color = Color.PINK,
             scale = 1.4f
         )
 
@@ -320,6 +342,29 @@ class ExampleWorld(
 
         shapeRenderer.end()
 
+    }
+
+    private fun drawDistancebar(){
+        val firstx = screenWidth - 400
+        val firsty = 300f
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
+        shapeRenderer.color = Color.PINK
+
+        for (i in 0 until 8) {
+            val y = firsty + i * 60
+            shapeRenderer.rect(firstx, y, 20f,60f )
+        }
+        shapeRenderer.end()
+        val filled = maxDistance - distanceClosed
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = Color.PINK
+
+        for (i in 0 until filled) {
+            val y = firsty + i * 60
+            shapeRenderer.rect(firstx, y, 19f,59f )
+        }
+        shapeRenderer.end()
     }
 
 
@@ -374,12 +419,8 @@ class ExampleWorld(
         for (i in 0 until 4) {
             val x = firstX + i * 100
 
-            val selected = if (i == BoxIndex) {
-                if ((effectime * 2).toInt() % 2 == 0) {
-                    Color.YELLOW
-                } else {
-                    Color.GREEN
-                }
+            val selected=  if(i == BoxIndex) {
+                Color.RED
             }
             else{
                 Color.GREEN
@@ -394,8 +435,10 @@ class ExampleWorld(
             )
         }
     }
-
-
+    private var distanceClosed = 0
+    private val maxDistance = 8
+    private var turnTimer = 25f
+    private val minTimer = 25f
     /** 게임 오버 시 화면 중앙에 띄우는 안내 메시지. */
     private fun drawGameOverOverlay() {
         drawTextOnScreen(
@@ -419,6 +462,7 @@ class ExampleWorld(
         super.dispose()
         tileTexture.dispose()
         shapeRenderer.dispose()
-
+        particleBatch.dispose()
+        explosionEffect.dispose()
     }
 }
