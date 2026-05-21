@@ -9,6 +9,7 @@ import com.oop.game.InputHandler
 import kotlin.math.floor
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.Input
+import com.badlogic.gdx.graphics.g2d.ParticleEffect
 
 
 
@@ -103,6 +104,8 @@ class ExampleWorld(
     private val shapeRenderer = ShapeRenderer()
     private val boxSize = 70f
     private val boxGap = 15f
+    private val explosionEffect = ParticleEffect()
+    private var explosionStart = false
 
     /**
      * 생성자 본문 — 월드에 플레이어와 적을 등록한다.
@@ -111,6 +114,11 @@ class ExampleWorld(
     init {
         add(player)
         add(enemy)
+
+        explosionEffect.load(
+            Gdx.files.internal("explosion.p"),
+            Gdx.files.internal("")
+        )
     }
 
     /**
@@ -127,6 +135,9 @@ class ExampleWorld(
             GameState.GAME_OVER -> updateGameOver()
         }
     }
+
+
+    private var effectime = 0f
 
 
     /** IN_PLAY 상태에서 매 프레임 처리 — 카메라 이동, 객체 갱신, 충돌 체크. */
@@ -146,6 +157,7 @@ class ExampleWorld(
         offsetY = offsetY.coerceIn(0f, worldHeight - screenHeight)
 
         // ── 1) 게임 객체 갱신 — 각자 한 프레임씩 진행 ──
+        effectime += delta
         NumberInput()
         updateAllObjects(delta)
 
@@ -155,7 +167,18 @@ class ExampleWorld(
         //   이 예제에선 충돌 시 객체를 죽이지 않고 게임 상태만 바꾼다.
         //   (총알 게임이라면 여기서 bullet.kill(), enemy.kill() 같은 처리)
         if (player.collidesWith(enemy)) {
+            explosionEffect.setPosition(
+                player.x + player.width / 2,
+                player.y + player.height / 2,
+            )
+
+            explosionEffect.start()
+            explosionStart = true
             state = GameState.GAME_OVER
+        }
+
+        if (explosionStart){
+            explosionEffect.update(delta)
         }
 
         // ── 3) 죽은 객체 정리 ──
@@ -163,6 +186,7 @@ class ExampleWorld(
         //   bullet/enemy 가 추가될 때를 대비한 표준 흐름이다.
         removeDead()
     }
+
 
     /** GAME_OVER 상태에서 매 프레임 처리 — ESC 입력만 감시한다. */
     private fun updateGameOver() {
@@ -248,6 +272,9 @@ class ExampleWorld(
     override fun render(delta: Float) {
         super.render(delta)
 
+        if (explosionStart) {
+            drawParticleEffect()
+        }
         // ── 항상 보이는 UI ──
         drawBoxes()
         drawInputNumbers()
@@ -262,6 +289,12 @@ class ExampleWorld(
             }
             GameState.GAME_OVER -> drawGameOverOverlay()
         }
+    }
+
+    private fun drawParticleEffect(){
+        batch.begin()
+        explosionEffect.draw(batch)
+        batch.end()
     }
 
     /** 항상 화면에 표시되는 정보 — HP 표시와 월드 중앙 표지. */
@@ -360,8 +393,12 @@ class ExampleWorld(
         for (i in 0 until 4) {
             val x = firstX + i * 100
 
-            val selected=  if(i == BoxIndex) {
-                Color.RED
+            val selected = if (i == BoxIndex) {
+                if ((effectime * 2).toInt() % 2 == 0) {
+                    Color.YELLOW
+                } else {
+                    Color.GREEN
+                }
             }
             else{
                 Color.GREEN
@@ -401,5 +438,6 @@ class ExampleWorld(
         super.dispose()
         tileTexture.dispose()
         shapeRenderer.dispose()
+        explosionEffect.dispose()
     }
 }
