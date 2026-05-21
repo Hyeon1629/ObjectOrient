@@ -8,6 +8,7 @@ import com.oop.game.GameWorld
 import com.oop.game.InputHandler
 import kotlin.math.floor
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.graphics.g2d.ParticleEffect
 
 
 /**
@@ -102,7 +103,9 @@ class ExampleWorld(
     private val shapeRenderer = ShapeRenderer()
     private val boxSize = 70f
     private val boxGap = 15f
-
+    private val explosionEffect = ParticleEffect()
+    private var explosionStart = false
+    private val particleBatch = SpriteBatch()
     /**
      * 생성자 본문 — 월드에 플레이어와 적을 등록한다.
      *   이렇게 등록해야 update / draw 루프에 포함된다.
@@ -110,6 +113,10 @@ class ExampleWorld(
     init {
         add(player)
         add(enemy)
+        explosionEffect.load(
+            Gdx.files.internal("explosion.p"),
+            Gdx.files.internal("")
+        )
     }
 
     /**
@@ -158,6 +165,15 @@ class ExampleWorld(
         //   이 예제에선 충돌 시 객체를 죽이지 않고 게임 상태만 바꾼다.
         //   (총알 게임이라면 여기서 bullet.kill(), enemy.kill() 같은 처리)
         if (player.collidesWith(enemy)) {
+            player.image = false
+            explosionEffect.setPosition(
+                player.x + player.width / 2,
+                player.y + player.height / 2
+            )
+
+            explosionEffect.start()
+            explosionStart = true
+
             state = GameState.GAME_OVER
         }
 
@@ -171,6 +187,9 @@ class ExampleWorld(
     private fun updateGameOver() {
         // ESC 키가 '막 눌린 순간' 앱 종료.
         //   isKeyJustPressed 로 한 이유: 누르고 있는 동안 매 프레임 exit 호출되지 않게.
+        if(explosionStart){
+            explosionEffect.update(Gdx.graphics.deltaTime)
+        }
         if (InputHandler.isKeyJustPressed(InputHandler.ESCAPE)) {
             Gdx.app.exit()
         }
@@ -250,6 +269,12 @@ class ExampleWorld(
      */
     override fun render(delta: Float) {
         super.render(delta)
+
+        if (explosionStart) {
+            particleBatch.begin()
+            explosionEffect.draw(particleBatch)
+            particleBatch.end()
+        }
 
         // ── 항상 보이는 UI ──
         drawBoxes()
@@ -437,5 +462,7 @@ class ExampleWorld(
         super.dispose()
         tileTexture.dispose()
         shapeRenderer.dispose()
+        particleBatch.dispose()
+        explosionEffect.dispose()
     }
 }
