@@ -9,7 +9,7 @@ import com.oop.game.InputHandler
 import kotlin.math.floor
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.Input
-import com.badlogic.gdx.graphics.g2d.ParticleEffect
+
 
 
 
@@ -104,8 +104,7 @@ class ExampleWorld(
     private val shapeRenderer = ShapeRenderer()
     private val boxSize = 70f
     private val boxGap = 15f
-    private val explosionEffect = ParticleEffect()
-    private var explosionStart = false
+
 
     /**
      * 생성자 본문 — 월드에 플레이어와 적을 등록한다.
@@ -115,10 +114,7 @@ class ExampleWorld(
         add(player)
         add(enemy)
 
-        explosionEffect.load(
-            Gdx.files.internal("explosion.p"),
-            Gdx.files.internal("")
-        )
+
     }
 
     /**
@@ -167,19 +163,10 @@ class ExampleWorld(
         //   이 예제에선 충돌 시 객체를 죽이지 않고 게임 상태만 바꾼다.
         //   (총알 게임이라면 여기서 bullet.kill(), enemy.kill() 같은 처리)
         if (player.collidesWith(enemy)) {
-            explosionEffect.setPosition(
-                player.x + player.width / 2,
-                player.y + player.height / 2,
-            )
-
-            explosionEffect.start()
-            explosionStart = true
             state = GameState.GAME_OVER
         }
 
-        if (explosionStart){
-            explosionEffect.update(delta)
-        }
+
 
         // ── 3) 죽은 객체 정리 ──
         //   현재 예제에선 아무 것도 안 죽으므로 영향 없지만,
@@ -272,9 +259,7 @@ class ExampleWorld(
     override fun render(delta: Float) {
         super.render(delta)
 
-        if (explosionStart) {
-            drawParticleEffect()
-        }
+
         // ── 항상 보이는 UI ──
         drawBoxes()
         drawInputNumbers()
@@ -291,11 +276,7 @@ class ExampleWorld(
         }
     }
 
-    private fun drawParticleEffect(){
-        batch.begin()
-        explosionEffect.draw(batch)
-        batch.end()
-    }
+
 
     /** 항상 화면에 표시되는 정보 — HP 표시와 월드 중앙 표지. */
     private fun drawHud() {
@@ -438,6 +419,6 @@ class ExampleWorld(
         super.dispose()
         tileTexture.dispose()
         shapeRenderer.dispose()
-        explosionEffect.dispose()
+
     }
 }
