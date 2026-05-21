@@ -8,8 +8,6 @@ import com.oop.game.GameWorld
 import com.oop.game.InputHandler
 import kotlin.math.floor
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.Input
-
 
 
 /**
@@ -54,6 +52,7 @@ class ExampleWorld(
     screenHeight: Float,
     worldWidth: Float,
     worldHeight: Float,
+    //private: Any,
 ) : GameWorld(screenWidth, screenHeight, worldWidth, worldHeight) {
 
     /**
@@ -148,7 +147,11 @@ class ExampleWorld(
         // ── 1) 게임 객체 갱신 — 각자 한 프레임씩 진행 ──
         NumberInput()
         updateAllObjects(delta)
-
+        turnTimer -= delta
+        if (turnTimer <= 0f) {
+            distanceClosed++
+            turnTimer = minTimer
+        }
 
         // ── 2) 상호작용 결정 — 누가 누구와 부딪혀 어떻게 되는지 ──
         //   collidesWith 는 GameObject 의 메서드 → 모든 게임 객체가 자동으로 가짐.
@@ -253,6 +256,7 @@ class ExampleWorld(
         drawInputNumbers()
         drawanswer()
         drawHud()
+        drawDistancebar()
 
         // ── 상태별로
         //그리는 것이 다름 ──
@@ -282,6 +286,13 @@ class ExampleWorld(
             color = Color.GREEN,
             scale = 1.4f
         )
+        drawTextOnScreen(
+            text = "TIMER: ${turnTimer.toInt()} sec",
+            x = screenWidth / 2 - 250,
+            y = screenHeight / 3 - 120,
+            color = Color.PINK,
+            scale = 1.4f
+        )
 
 
 
@@ -306,6 +317,29 @@ class ExampleWorld(
 
         shapeRenderer.end()
 
+    }
+
+    private fun drawDistancebar(){
+        val firstx = screenWidth - 400
+        val firsty = 300f
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line)
+        shapeRenderer.color = Color.PINK
+
+        for (i in 0 until 8) {
+            val y = firsty + i * 60
+            shapeRenderer.rect(firstx, y, 20f,60f )
+        }
+        shapeRenderer.end()
+        val filled = maxDistance - distanceClosed
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = Color.PINK
+
+        for (i in 0 until filled) {
+            val y = firsty + i * 60
+            shapeRenderer.rect(firstx, y, 19f,59f )
+        }
+        shapeRenderer.end()
     }
 
 
@@ -376,8 +410,10 @@ class ExampleWorld(
             )
         }
     }
-
-
+    private var distanceClosed = 0
+    private val maxDistance = 8
+    private var turnTimer = 25f
+    private val minTimer = 25f
     /** 게임 오버 시 화면 중앙에 띄우는 안내 메시지. */
     private fun drawGameOverOverlay() {
         drawTextOnScreen(
