@@ -31,18 +31,21 @@ class ExampleEnemy(
     private val maxX: Float
 ) : GameObject(x, y, 100f, 100f) {
 
+    var image = true
+
     // 이미지 로딩 — src/main/resources/enemy.png.
     private val texture = Texture(Gdx.files.internal("enemy.png"))
 
-    private val speed = 100f
+    //private val speed = 100f
 
     // 현재 진행 방향 — +1 이면 오른쪽, -1 이면 왼쪽.
     //   var 로 선언한 이유: 경계에서 반대로 뒤집혀야 하므로 값이 변함.
     private var direction = 1f
 
     override fun update(delta: Float) {
+    }
         // 수평 이동: 속도 × 방향 × 시간
-        x += speed * direction * delta
+        /**x += speed * direction * delta
 
         // 경계에 닿으면 제자리에 붙이고 방향 반전.
         if (x <= minX) {
@@ -52,7 +55,7 @@ class ExampleEnemy(
             x = maxX - width
             direction = -1f
         }
-    }
+    }**/
 
     /**
      * 자신의 이미지를 그린다.
@@ -60,6 +63,8 @@ class ExampleEnemy(
      *   더 크게 보이게 하려면 width/height 를 늘리면 자동 확대된다.
      */
     override fun draw(batch: SpriteBatch) {
+        if (!image) return
+
         batch.draw(texture, x, y, width, height)
     }
 

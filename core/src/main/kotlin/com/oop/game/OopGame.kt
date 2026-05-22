@@ -39,8 +39,8 @@ class OopGame : Game() {
 
     // 월드 크기 — 화면의 1.5배. 카메라(WASD)로 탐험 가능한 영역.
     //   이 값은 내부 설정이므로 private.
-    private val worldWidth = 1440
-    private val worldHeight = 820
+    private val worldWidth = 1490
+    private val worldHeight = 950
 
     /**
      * LibGDX 가 게임 시작 시 한 번 호출하는 라이프사이클 메서드.
