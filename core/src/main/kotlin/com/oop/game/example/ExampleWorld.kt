@@ -89,6 +89,7 @@ class ExampleWorld(
 
     // 현재 게임 상태 — 입력/충돌에 따라 IN_PLAY ↔ GAME_OVER 로 전환된다.
     private var state = GameState.IN_PLAY
+    private val secretAnswer: IntArray = SecretNum()       // 코드 수정
 
     // ── 체스판 배경 설정 (drawBackground() 에서 사용) ──
     //   이게 없으면 검은 배경뿐이라 카메라(WASD) 이동이 눈에 안 보인다.
@@ -393,8 +394,23 @@ class ExampleWorld(
             if (InputNumbers[BoxIndex] < 0) InputNumbers[BoxIndex] = 9
         }
         if (InputHandler.isKeyJustPressed(InputHandler.ENTER)) {
-                val result = InputNumbers.joinToString("    ")
-                answer.add(result)
+            // 코드 수정 시작
+            if (hasDuplicates(InputNumbers)) return
+
+            val result = judge(InputNumbers)
+            val s = result.first
+            val b = result.second
+
+            val log = "${InputNumbers.joinToString(" ")}   ${s}S ${b}B"
+            answer.add(log)
+
+            distanceClosed++
+            turnTimer = minTimer
+
+            if (s == 4 || distanceClosed >= maxDistance) {
+                state = GameState.GAME_OVER
+            }
+            // 코드 수정 끝
         }
 
     }
@@ -439,6 +455,55 @@ class ExampleWorld(
     private val maxDistance = 8
     private var turnTimer = 25f
     private val minTimer = 25f
+
+    // 코드 수정 시작 — 숫자야구 게임 로직
+    /** 정답 4자리 만들기 - 0~9 중에서 안 겹치게 */
+    private fun SecretNum(): IntArray {
+        val result = intArrayOf(0, 0, 0, 0)
+        var count = 0
+        while (count < 4) {
+            val n = (0..9).random()
+            var duplicate = false
+            for (i in 0 until count) {
+                if (result[i] == n) duplicate = true
+            }
+            if (!duplicate) {
+                result[count] = n
+                count++
+            }
+        }
+        return result
+    }
+
+    /** 입력 4개 중에 같은 숫자가 있는지 검사 */
+    private fun hasDuplicates(arr: IntArray): Boolean {
+        for (i in 0 until 4) {
+            for (j in i + 1 until 4) {
+                if (arr[i] == arr[j]) return true
+            }
+        }
+        return false
+    }
+
+    /** 정답과 추측을 비교해서 (스트라이크, 볼) 반환 */
+    private fun judge(guess: IntArray): Pair<Int, Int> {
+        var strike = 0
+        var ball = 0
+        for (i in 0 until 4) {
+            for (j in 0 until 4) {
+                if (guess[i] == secretAnswer[j]) {
+                    if (i == j) {
+                        strike++
+                    } else {
+                        ball++
+                    }
+                }
+            }
+        }
+        return Pair(strike, ball)
+    }
+    // 코드 수정 끝
+    
     /** 게임 오버 시 화면 중앙에 띄우는 안내 메시지. */
     private fun drawGameOverOverlay() {
         drawTextOnScreen(
