@@ -526,8 +526,8 @@ class ExampleWorld(
     }
     private var distanceClosed = 0
     private val maxDistance = 8
-    private var turnTimer = 25f
-    private val minTimer = 25f
+    private var turnTimer = 50f
+    private val minTimer = 50f
 
     // 코드 수정 시작 — 숫자야구 게임 로직
     /** 정답 4자리 만들기 - 0~9 중에서 안 겹치게 */
