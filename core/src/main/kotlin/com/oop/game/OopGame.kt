@@ -39,8 +39,8 @@ class OopGame : Game() {
 
     // 월드 크기 — 화면의 1.5배. 카메라(WASD)로 탐험 가능한 영역.
     //   이 값은 내부 설정이므로 private.
-    private val worldWidth = 1440
-    private val worldHeight = 820
+    private val worldWidth = 1490
+    private val worldHeight = 950
 
     /**
      * LibGDX 가 게임 시작 시 한 번 호출하는 라이프사이클 메서드.
@@ -56,12 +56,12 @@ class OopGame : Game() {
      *  GameWorld 가 LibGDX 의 Screen 인터페이스를 상속하므로 setScreen 인자로 넘길 수 있다.
      */
     override fun create() {
-        val firstWorld = ExampleWorld(
+        setScreen(StartWorld(
+            game = this,
             screenWidth = screenWidth.toFloat(),
             screenHeight = screenHeight.toFloat(),
-            worldWidth = worldWidth.toFloat(),
-            worldHeight = worldHeight.toFloat()
-        )
-        setScreen(firstWorld)   // 부모 Game 이 제공하는 메서드
+        ))
+
+
     }
 }

@@ -67,13 +67,14 @@ class ExampleWorld(
      */
     private enum class GameState {
         IN_PLAY,
-        GAME_OVER
+        GAME_OVER,
+        WIN,
     }
 
     // 플레이어 — 월드 중앙 하단에서 시작.
     //   월드 크기를 함께 넘겨서, 경계 밖으로 못 나가게 한다.
     private val player = ExamplePlayer(
-        x = worldWidth / 2,   // 가로 30 의 절반을 빼서 정확히 중앙
+        x = worldWidth / 2 - 50f,   // 가로 30 의 절반을 빼서 정확히 중앙
         y = 200f,
         worldWidth = worldWidth,
         worldHeight = worldHeight
@@ -81,14 +82,15 @@ class ExampleWorld(
 
     // 적 — 월드 상단에서 좌우 왕복.
     private val enemy = ExampleEnemy(
-        x = worldWidth / 2,
-        y = worldHeight - 200f,
+        x = worldWidth / 2 - 50f,
+        y = screenHeight - 100,
         minX = worldWidth / 2 - 250,
         maxX = worldWidth / 2 + 250
     )
 
     // 현재 게임 상태 — 입력/충돌에 따라 IN_PLAY ↔ GAME_OVER 로 전환된다.
     private var state = GameState.IN_PLAY
+    private val secretAnswer: IntArray = SecretNum()       // 코드 수정
 
     // ── 체스판 배경 설정 (drawBackground() 에서 사용) ──
     //   이게 없으면 검은 배경뿐이라 카메라(WASD) 이동이 눈에 안 보인다.
@@ -113,6 +115,9 @@ class ExampleWorld(
     init {
         add(player)
         add(enemy)
+
+        offsetX = (worldWidth - screenWidth) / 2
+        offsetY = (worldHeight - screenHeight) / 2 - 300
         explosionEffect.load(
             Gdx.files.internal("explosion.p"),
             Gdx.files.internal("")
@@ -131,6 +136,8 @@ class ExampleWorld(
         when (state) {
             GameState.IN_PLAY -> updateInPlay(delta)
             GameState.GAME_OVER -> updateGameOver()
+            GameState.WIN -> updateGameOver()
+
         }
     }
 
@@ -139,11 +146,11 @@ class ExampleWorld(
     private fun updateInPlay(delta: Float) {
         // ── 카메라 이동 (WASD) ──
         //   offsetX/Y 를 바꾸면 카메라가 월드 안에서 움직인다.
-        val cameraSpeed = 200f * delta
+        /**val cameraSpeed = 200f * delta
         if (InputHandler.isKeyPressed(InputHandler.W)) offsetY += cameraSpeed
         if (InputHandler.isKeyPressed(InputHandler.S)) offsetY -= cameraSpeed
         if (InputHandler.isKeyPressed(InputHandler.A)) offsetX -= cameraSpeed
-        if (InputHandler.isKeyPressed(InputHandler.D)) offsetX += cameraSpeed
+        if (InputHandler.isKeyPressed(InputHandler.D)) offsetX += cameraSpeed**/
 
         // 카메라가 월드 경계 밖을 보여주지 않도록 clamp.
         //   보여주는 영역이 [offset, offset+screen] 이어야 하므로
@@ -165,6 +172,7 @@ class ExampleWorld(
         //   이 예제에선 충돌 시 객체를 죽이지 않고 게임 상태만 바꾼다.
         //   (총알 게임이라면 여기서 bullet.kill(), enemy.kill() 같은 처리)
         if (player.collidesWith(enemy)) {
+
             player.image = false
             explosionEffect.setPosition(
                 player.x + player.width / 2,
@@ -182,6 +190,7 @@ class ExampleWorld(
         //   bullet/enemy 가 추가될 때를 대비한 표준 흐름이다.
         removeDead()
     }
+
 
     /** GAME_OVER 상태에서 매 프레임 처리 — ESC 입력만 감시한다. */
     private fun updateGameOver() {
@@ -250,7 +259,7 @@ class ExampleWorld(
 
         // 배경에 입힌 색이 다음 그리기(게임 객체)에 영향을 주지 않도록 흰색으로 복원.
         batch.color = Color.WHITE
-        val lineThickness = 0.3f
+        val lineThickness = 1f
         batch.draw(tileTexture, screenWidth / 3 - 10, 200f,  screenWidth / 3 + 20, lineThickness)
         batch.draw(tileTexture, screenWidth / 2 - 250,0f, lineThickness, screenHeight)
         batch.draw(tileTexture, screenWidth / 2 + 250, 0f, lineThickness, screenHeight)
@@ -267,8 +276,42 @@ class ExampleWorld(
      * 주의: super.render(delta) 가 화면 clear + 배경 + 객체까지 그리므로,
      *       텍스트는 반드시 super 호출 **이후** 그려야 가려지지 않는다.
      */
+
+    private var hitEffect = 0
+
     override fun render(delta: Float) {
+        val originalX = camera.position.x
+        val originalY = camera.position.y
+
+        if (hitEffect > 0) {
+            val shake = if (hitEffect % 2 == 0) 3f else -3f
+
+            camera.position.x = originalX + shake
+            camera.position.y = originalY - shake
+            camera.update()
+
+            hitEffect--
+        }
         super.render(delta)
+
+        camera.position.x = originalX
+        camera.position.y = originalY
+        camera.update()
+
+        if (warningTime > 0f) {
+            warningTime -= Gdx.graphics.deltaTime
+
+
+            drawTextOnScreen(
+                text = warningMessage,
+                x = screenWidth / 2 - 225 ,
+                y = screenHeight / 2 + 100,
+                color = Color.RED,
+                scale = 2f
+            )
+
+        }
+
 
         if (explosionStart) {
             particleBatch.begin()
@@ -290,6 +333,7 @@ class ExampleWorld(
                 // 플레이 중에는 추가로 그릴 것 없음
             }
             GameState.GAME_OVER -> drawGameOverOverlay()
+            GameState.WIN -> drawWinOverlay()
         }
     }
 
@@ -366,7 +410,8 @@ class ExampleWorld(
         }
         shapeRenderer.end()
     }
-
+    var warningMessage = "" //경고 문구
+    var warningTime = 0f //경고 문구 시간
 
     private val InputNumbers = intArrayOf(0, 0, 0, 0)
     private var BoxIndex = 0
@@ -393,8 +438,42 @@ class ExampleWorld(
             if (InputNumbers[BoxIndex] < 0) InputNumbers[BoxIndex] = 9
         }
         if (InputHandler.isKeyJustPressed(InputHandler.ENTER)) {
-                val result = InputNumbers.joinToString("    ")
-                answer.add(result)
+            // 코드 수정 시작
+            if (hasDuplicates(InputNumbers)) {
+                warningMessage = "Duplicate numbers are not allowed."
+                warningTime = 1.5f
+                return
+            }
+
+            val result = judge(InputNumbers)
+            val s = result.first
+            val b = result.second
+
+            val log = "${InputNumbers.joinToString(" ")}   ${s}S ${b}B"
+            answer.add(log)
+
+
+            if(s < 1){
+                enemy.y -= 50
+                hitEffect = 8
+            }
+
+            distanceClosed++
+            turnTimer = minTimer
+
+            if (s == 4 ) {
+                enemy.image = false
+                explosionEffect.setPosition(
+                    enemy.x + enemy.width/2,
+                    enemy.y + enemy.height/2
+                )
+
+                explosionEffect.start()
+                explosionStart = true
+
+                state = GameState.WIN
+            }
+            // 코드 수정 끝
         }
 
     }
@@ -402,13 +481,23 @@ class ExampleWorld(
         var y = screenHeight - 50f
 
         for (i in answer.indices) {
-            drawTextOnScreen(
-                text = answer[i],
-                x = 40f,
-                y = y - 70f * i,
-                color = Color.WHITE,
-                scale = 1.5f
-            )
+            if (i < 11)
+                drawTextOnScreen(
+                    text = answer[i],
+                    x = 40f,
+                    y = y - 70f * i,
+                    color = Color.WHITE,
+                    scale = 1.5f
+                )
+            else{
+                drawTextOnScreen(
+                    text = answer[i],
+                    x = 250f,
+                    y = y - 70f * (i-11),
+                    color = Color.WHITE,
+                    scale = 1.5f
+                )
+            }
         }
     }
 
@@ -437,20 +526,95 @@ class ExampleWorld(
     }
     private var distanceClosed = 0
     private val maxDistance = 8
-    private var turnTimer = 25f
-    private val minTimer = 25f
+    private var turnTimer = 50f
+    private val minTimer = 50f
+
+    // 코드 수정 시작 — 숫자야구 게임 로직
+    /** 정답 4자리 만들기 - 0~9 중에서 안 겹치게 */
+    private fun SecretNum(): IntArray {
+        val result = intArrayOf(0, 0, 0, 0)
+        var count = 0
+        while (count < 4) {
+            val n = (0..9).random()
+            var duplicate = false
+            for (i in 0 until count) {
+                if (result[i] == n) duplicate = true
+            }
+            if (!duplicate) {
+                result[count] = n
+                count++
+            }
+        }
+        return result
+    }
+
+    /** 입력 4개 중에 같은 숫자가 있는지 검사 */
+    private fun hasDuplicates(arr: IntArray): Boolean {
+        for (i in 0 until 4) {
+            for (j in i + 1 until 4) {
+                if (arr[i] == arr[j]) return true
+            }
+        }
+        return false
+    }
+
+    /** 정답과 추측을 비교해서 (스트라이크, 볼) 반환 */
+    private fun judge(guess: IntArray): Pair<Int, Int> {
+        var strike = 0
+        var ball = 0
+        for (i in 0 until 4) {
+            for (j in 0 until 4) {
+                if (guess[i] == secretAnswer[j]) {
+                    if (i == j) {
+                        strike++
+                    } else {
+                        ball++
+                    }
+                }
+            }
+        }
+        return Pair(strike, ball)
+    }
+    // 코드 수정 끝
+    
     /** 게임 오버 시 화면 중앙에 띄우는 안내 메시지. */
     private fun drawGameOverOverlay() {
         drawTextOnScreen(
             text = "Game Over!",
             x = screenWidth / 2 - 80f,
-            y = screenHeight / 2,
-            color = Color.WHITE,
+            y = screenHeight / 2 + 40f,
+            color = Color.RED,
             scale = 2f
         )
         drawTextOnScreen(
             text = "Press ESC to exit",
-            x = screenWidth / 2 - 70f,
+            x = screenWidth / 2 - 100f,
+            y = screenHeight / 2,
+            color = Color.WHITE,
+            scale = 2f
+        )
+    }
+
+    private fun drawWinOverlay() {
+        drawTextOnScreen(
+            text = "Congratulation!",
+            x = screenWidth / 2 - 90f,
+            y = screenHeight / 2 + 40f,
+            color = Color.BLUE,
+            scale = 2f
+        )
+
+        drawTextOnScreen(
+            text = "You win!",
+            x = screenWidth / 2 - 60f,
+            y = screenHeight / 2 ,
+            color = Color.BLUE,
+            scale = 2f
+        )
+
+        drawTextOnScreen(
+            text = "Press ESC to exit",
+            x = screenWidth / 2 - 100f,
             y = screenHeight / 2 - 40f,
             color = Color.WHITE,
             scale = 2f

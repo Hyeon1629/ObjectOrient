@@ -41,7 +41,8 @@ class ExamplePlayer(
     private val speed = 200f
 
     override fun update(delta: Float) {
-        if (InputHandler.isKeyPressed(InputHandler.A))  x -= speed * delta
+    }
+        /**if (InputHandler.isKeyPressed(InputHandler.A))  x -= speed * delta
         if (InputHandler.isKeyPressed(InputHandler.D)) x += speed * delta
         if (InputHandler.isKeyPressed(InputHandler.W))    y += speed * delta
         if (InputHandler.isKeyPressed(InputHandler.S))  y -= speed * delta
@@ -49,7 +50,7 @@ class ExamplePlayer(
         // 월드 경계 안쪽으로 가두기.
         x = x.coerceIn(worldWidth / 2 - 250, worldWidth / 2 + 250 - 100f)
         y = y.coerceIn(200f, worldHeight - height)
-    }
+    **/
 
     /**
      * 매 프레임 호출 — 자신의 이미지를 그린다.
