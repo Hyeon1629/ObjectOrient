@@ -241,6 +241,8 @@ class ExampleWorld(
         batch.color = Color.WHITE
 
     }
+    var lineThickness = 0f
+
     override fun drawBackground(batch: SpriteBatch) {
         // 현재 카메라 시작점이 속한 타일 인덱스 (여유분으로 -1)
         val startCol = floor(offsetX / tileSize).toInt() - 1
@@ -261,12 +263,11 @@ class ExampleWorld(
         drawstars()
 
         // 배경에 입힌 색이 다음 그리기(게임 객체)에 영향을 주지 않도록 흰색으로 복원.
+        lineThickness = 1f
         batch.color = Color.WHITE
-        val lineThickness = 1f
         batch.draw(tileTexture, screenWidth / 3 - 10, 200f,  screenWidth / 3 + 20, lineThickness)
         batch.draw(tileTexture, screenWidth / 2 - 250,0f, lineThickness, screenHeight)
         batch.draw(tileTexture, screenWidth / 2 + 250, 0f, lineThickness, screenHeight)
-
         batch.color = Color.WHITE
     }
 
@@ -281,6 +282,8 @@ class ExampleWorld(
      */
 
     private var hitEffect = 0
+    var blinkTime = 0f
+    var warnline = true
 
     override fun render(delta: Float) {
         val originalX = camera.position.x
@@ -301,6 +304,26 @@ class ExampleWorld(
         camera.position.y = originalY
         camera.update()
 
+        if (enemy.y == screenHeight - 541){
+            blinkTime += Gdx.graphics.deltaTime
+
+            if (blinkTime >= 0.3f) {
+                warnline = !warnline
+                blinkTime = 0f
+            }
+
+            if (warnline) {
+                batch.begin()
+                lineThickness = 5f
+                batch.color = Color.RED
+                batch.draw(tileTexture, 0f, 0f, lineThickness, screenHeight)
+                batch.draw(tileTexture, screenWidth - 5f, 0f, lineThickness, screenHeight)
+                batch.draw(tileTexture, 0f, screenHeight - 5f, screenWidth, lineThickness)
+                batch.draw(tileTexture, 0f, 0f, screenWidth, lineThickness)
+                batch.color = Color.WHITE
+                batch.end()
+            }
+        }
         if (warningTime > 0f) {
             warningTime -= Gdx.graphics.deltaTime
 
@@ -321,6 +344,8 @@ class ExampleWorld(
             explosionEffect.draw(particleBatch)
             particleBatch.end()
         }
+
+
 
         // ── 항상 보이는 UI ──
         drawBoxes()
@@ -457,7 +482,7 @@ class ExampleWorld(
 
 
             if(s < 1){
-                enemy.y -= 50
+                enemy.y -= 63
                 hitEffect = 8
                 distanceClosed++
                 if (distanceClosed >= maxDistance){
@@ -583,7 +608,8 @@ class ExampleWorld(
         return Pair(strike, ball)
     }
     // 코드 수정 끝
-    
+
+
     /** 게임 오버 시 화면 중앙에 띄우는 안내 메시지. */
     private fun drawGameOverOverlay() {
         drawTextOnScreen(
