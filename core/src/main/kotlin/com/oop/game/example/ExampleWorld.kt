@@ -165,6 +165,9 @@ class ExampleWorld(
         if (turnTimer <= 0f) {
             distanceClosed++
             turnTimer = minTimer
+            if(distanceClosed >= maxDistance){
+                state = GameState.GAME_OVER
+            }
         }
 
         // ── 2) 상호작용 결정 — 누가 누구와 부딪혀 어떻게 되는지 ──
@@ -456,9 +459,13 @@ class ExampleWorld(
             if(s < 1){
                 enemy.y -= 50
                 hitEffect = 8
+                distanceClosed++
+                if (distanceClosed >= maxDistance){
+                    state = GameState.GAME_OVER
+                }
             }
 
-            distanceClosed++
+
             turnTimer = minTimer
 
             if (s == 4 ) {
