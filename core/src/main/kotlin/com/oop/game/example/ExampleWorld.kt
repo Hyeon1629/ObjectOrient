@@ -168,6 +168,7 @@ class ExampleWorld(
             if(distanceClosed >= maxDistance){
                 state = GameState.GAME_OVER
             }
+
         }
 
         // ── 2) 상호작용 결정 — 누가 누구와 부딪혀 어떻게 되는지 ──
