@@ -447,6 +447,14 @@ class ExampleWorld(
     val answer = mutableListOf<String>()
 
     private fun NumberInput(){
+        for (n in 0..9) {
+            val pressed = InputHandler.isKeyJustPressed(InputHandler.NUM_KEYS[n])
+            if (pressed) {
+                InputNumbers[BoxIndex] = n
+                if (BoxIndex < 3) BoxIndex++   // 마지막 칸이면 더 안 넘어감
+            }
+        } //이종현
+
         if (InputHandler.isKeyJustPressed(InputHandler.LEFT)) {
             BoxIndex --
             if (BoxIndex < 0) BoxIndex = 3
@@ -478,7 +486,11 @@ class ExampleWorld(
             val s = result.first
             val b = result.second
 
-            val log = "${InputNumbers.joinToString(" ")}   ${s}S ${b}B"
+            val log = if (s == 0 && b == 0) {
+                "${InputNumbers.joinToString(" ")}   OUT"
+            } else {
+                "${InputNumbers.joinToString(" ")}   ${s}S ${b}B"
+            }
             answer.add(log)
 
 
